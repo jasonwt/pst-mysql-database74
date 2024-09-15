@@ -1,0 +1,44 @@
+{
+    "name": "pst/mysql-database",
+    "description": "PST (Peyton, Stacy, Timber) MySql Database Implementation",
+    "type": "library",
+    "license": "MIT",
+    "version": "7.4.33",
+    "autoload": {
+        "psr-4": {
+            "Pst\\MysqlDatabase\\": "src/"
+        },
+        "files": [
+            
+        ]
+    },
+    "authors": [
+        {
+            "name": "Jason Thompson"
+        }
+    ],
+
+    "repositories":  [
+        {
+            "type": "path",
+            "url": "../core"
+        },
+        {
+            "type": "path",
+            "url": "../database"
+        },
+        {
+            "type": "path",
+            "url": "../testing"
+        }
+    ],
+
+    "minimum-stability": "dev",
+    
+    "require": {
+        "php": ">=7.4.33,<8.0",
+        "pst/core": "*",
+        "pst/database": "*",
+        "pst/testing": "*"
+    }
+}

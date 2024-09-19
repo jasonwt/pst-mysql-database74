@@ -8,7 +8,8 @@ use Pst\Core\CoreObject;
 
 use Pst\Core\Types\TypeHintFactory;
 
-use Pst\Core\Collections\Enumerator;
+use Pst\Core\Collections\ReadOnlyCollection;
+use Pst\Core\Collections\IReadOnlyCollection;
 
 use Pst\Database\Enums\ColumnDefaultValue;
 use Pst\Database\Enums\ColumnType;
@@ -46,7 +47,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * 
      * @param null|string $schemaName 
      * 
-     * @return IEnumerable|Schema 
+     * @return IReadOnlyCollection|Schema 
      * 
      * @throws Exception 
      * @throws PDOException 
@@ -65,7 +66,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             throw new DatabaseException("Error reading schemas");
         } else if ($queryResults->rowCount() === 0) {
             if ($schemaName === null) {
-                return Enumerator::new([], TypeHintFactory::tryParse(Schema::class));
+                return ReadOnlyCollection::new([], TypeHintFactory::tryParse(Schema::class));
             }
             throw new DatabaseException("Schema '{$schemaName}' does not exist");
         }
@@ -79,7 +80,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             $results[] = new Schema($schemaData['schemaName'], $tables->toArray());
         }
 
-        return $schemaName === null ? Enumerator::new($results, TypeHintFactory::tryParse(Schema::class)) : $results[0];
+        return $schemaName === null ? ReadOnlyCollection::new($results, TypeHintFactory::tryParse(Schema::class)) : $results[0];
     }
 
     /**
@@ -88,7 +89,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * @param string $schemaName 
      * @param null|string $tableName 
      * 
-     * @return IEnumerable|Table 
+     * @return IReadOnlyCollection|Table 
      * 
      * @throws Exception 
      * @throws PDOException 
@@ -113,7 +114,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
 
         if (($queryResults = $this->connection->query($query, $parameters)) === false) {
             if ($tableName === null) {
-                return Enumerator::new([], TypeHintFactory::tryParse(Table::class));
+                return ReadOnlyCollection::new([], TypeHintFactory::tryParse(Table::class));
             }
             throw new DatabaseException("Error reading tables for schema '{$schemaName}'");
         } else if ($queryResults->rowCount() === 0) {
@@ -134,7 +135,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             $results[] = new Table($schemaName, $tableData['tableName'], $columnsArray, $indexesArray);
         }
         
-        return $tableName === null ? Enumerator::new($results, TypeHintFactory::tryParse(Table::class)) : $results[0];
+        return $tableName === null ? ReadOnlyCollection::new($results, TypeHintFactory::tryParse(Table::class)) : $results[0];
     }
 
     /**
@@ -144,7 +145,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * @param string $tableName 
      * @param null|string $columnName 
      * 
-     * @return IEnumerable|Column 
+     * @return IReadOnlyCollection|Column 
      * 
      * @throws Exception 
      * @throws PDOException 
@@ -177,7 +178,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             throw new DatabaseException("Error reading columns for table '{$tableName}'");
         } else if ($queryResults->rowCount() === 0) {
             if ($columnName === null) {
-                return Enumerator::new([], TypeHintFactory::tryParse(Column::class));
+                return ReadOnlyCollection::new([], TypeHintFactory::tryParse(Column::class));
             }
 
             throw new DatabaseException("Column '{$columnName}' does not exist");
@@ -208,7 +209,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             $results[] = new Column(...array_values($columnData));
         }
 
-        return $columnName === null ? Enumerator::new($results, TypeHintFactory::tryParse(Column::class)) : $results[0];
+        return $columnName === null ? ReadOnlyCollection::new($results, TypeHintFactory::tryParse(Column::class)) : $results[0];
     }
 
     /**
@@ -218,7 +219,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * @param string $tableName 
      * @param null|string $indexName 
      * 
-     * @return IEnumerable|Index 
+     * @return IReadOnlyCollection|Index 
      * 
      * @throws Exception 
      * @throws PDOException 
@@ -272,7 +273,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             throw new DatabaseException("Error reading indexes for table '{$tableName}'");
         } else if ($queryResults->rowCount() === 0) {
             if ($indexName === null) {
-                return Enumerator::new([], TypeHintFactory::tryParse(Index::class));
+                return ReadOnlyCollection::new([], TypeHintFactory::tryParse(Index::class));
             }
 
             throw new DatabaseException("Index '{$indexName}' does not exist");
@@ -310,6 +311,6 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             $results[] = new Index($index['schemaName'], $index['tableName'], $index['name'], $index['type'], $index['columns']);
         }
 
-        return $indexName === null ? Enumerator::new($results, TypeHintFactory::tryParse(Index::class)) : $results[0];
+        return $indexName === null ? ReadOnlyCollection::new($results, TypeHintFactory::tryParse(Index::class)) : $results[0];
     }
 }

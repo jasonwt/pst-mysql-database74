@@ -27,8 +27,12 @@ class MysqlPdoConnection extends DatabaseConnection implements IMysqlConnection 
      * 
      * @return string 
      */
-    public function lastInsertId(): string {
-        return $this->pdo->lastInsertId();
+    public function lastInsertId(): ?string {
+        if (($lastInsertId = $this->pdo->lastInsertId()) === false) {
+            return null;
+        }
+
+        return $lastInsertId;
     }
 
     /**

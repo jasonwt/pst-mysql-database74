@@ -27,7 +27,7 @@ class MysqliConnection extends DatabaseConnection implements IMysqlConnection {
      * 
      * @return string 
      */
-    public function lastInsertId(): string {
+    public function lastInsertId(): ?string {
         return $this->link->insert_id;
     }
 

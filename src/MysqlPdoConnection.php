@@ -14,12 +14,18 @@ use Pst\Database\Exceptions\DatabaseException;
 use PDO;
 use Generator;
 use InvalidArgumentException;
+use PDOException;
+use Pst\Database\Exceptions\QueryConstraintException;
+use Pst\Database\Exceptions\QueryConstraintExceptionType;
+
+use function Pst\Core\pd;
 
 class MysqlPdoConnection extends DatabaseConnection implements IMysqlConnection {
     private PDO $pdo;
 
     public function __construct(PDO $pdo) {
         $this->pdo = $pdo;
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
     /**
@@ -61,21 +67,37 @@ class MysqlPdoConnection extends DatabaseConnection implements IMysqlConnection 
 
         $stmt = null;
 
-        if (count($parameters) > 0) {
-            $stmt = $this->pdo->prepare($query);
+        try {
+            if (count($parameters) > 0) {
+                $stmt = $this->pdo->prepare($query);
 
-            if ($stmt === false) {
-                throw new DatabaseException("Error preparing query");
+                if ($stmt === false) {
+                    throw new DatabaseException("Error preparing query");
+                }
+
+                if ($stmt->execute($parameters) === false) {
+                    throw new DatabaseException("Error executing query");
+                }
+                
+            } else {
+                $stmt = $this->pdo->query($query);
+
+                if ($stmt === false) {
+                    throw new DatabaseException("Error executing query");
+                }
             }
 
-            if ($stmt->execute($parameters) === false) {
-                throw new DatabaseException("Error executing query");
-            }
-        } else {
-            $stmt = $this->pdo->query($query);
+        } catch (PDOException $e) {
+            $errorInfo = $e->errorInfo;
 
-            if ($stmt === false) {
-                throw new DatabaseException("Error executing query");
+            if ($errorInfo[1] == 1452) {
+                throw new QueryConstraintException(QueryConstraintExceptionType::FOREIGN_KEY(), $query, $errorInfo[2], $errorInfo[1]);
+            } else if ($errorInfo[1] == 1062) {
+                throw new QueryConstraintException(QueryConstraintExceptionType::UNIQUE_KEY(), $query, $errorInfo[2], $errorInfo[1]);
+            } else if ($errorInfo[1] == 1064) {
+                throw new QueryConstraintException(QueryConstraintExceptionType::SYNTAX_ERROR(), $query, $errorInfo[2], $errorInfo[1]);
+            } else {
+                throw $e;
             }
         }
 

@@ -20,7 +20,7 @@ use Pst\Database\Exceptions\QueryConstraintExceptionType;
 
 use function Pst\Core\pd;
 
-class MysqlPdoConnection extends DatabaseConnection implements IMysqlConnection {
+class MysqlPdoConnection extends MysqlConnection implements IMysqlConnection {
     private PDO $pdo;
 
     public function __construct(PDO $pdo) {
@@ -39,15 +39,6 @@ class MysqlPdoConnection extends DatabaseConnection implements IMysqlConnection 
         }
 
         return $lastInsertId;
-    }
-
-    /**
-     * Get the name of the schema being used
-     * 
-     * @return string 
-     */
-    public function getUsingSchema(): string {
-        return $this->pdo->query('SELECT DATABASE() as usingSchema')->fetchColumn();
     }
 
     /**

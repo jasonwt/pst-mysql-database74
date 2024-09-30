@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Pst\MysqlDatabase;
 
 use Pst\Core\CoreObject;
-
+use Pst\Core\Enumerable\IRewindableEnumerable;
+use Pst\Core\Enumerable\Iterators\RewindableIterator;
+use Pst\Core\Enumerable\RewindableEnumerable;
 use Pst\Core\Types\TypeHintFactory;
-
-use Pst\Core\Collections\ReadonlyCollection;
-use Pst\Core\Collections\IReadonlyCollection;
-
 use Pst\Database\Column\ColumnDefaultValue;
 use Pst\Database\Column\ColumnType;
 use Pst\Database\Index\IndexType;
@@ -47,13 +45,13 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * 
      * @param null|string $schemaName 
      * 
-     * @return IReadonlyCollection|Schema 
+     * @return IRewindableEnumerable
      * 
      * @throws Exception 
      * @throws PDOException 
      * @throws InvalidArgumentException 
      */
-    protected function implReadSchemas(?string $schemaName = null) {
+    protected function implReadSchemas(?string $schemaName = null): IRewindableEnumerable {
         $query = "SELECT SCHEMA_NAME AS schemaName FROM information_schema.SCHEMATA";
         $parameters = [];
 
@@ -66,7 +64,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             throw new DatabaseException("Error reading schemas");
         } else if ($queryResults->rowCount() === 0) {
             if ($schemaName === null) {
-                return ReadonlyCollection::new([], TypeHintFactory::tryParse(Schema::class));
+                return RewindableEnumerable::create([], TypeHintFactory::tryParseTypeName(Schema::class));
             }
             throw new DatabaseException("Schema '{$schemaName}' does not exist");
         }
@@ -80,7 +78,9 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             $results[] = new Schema($schemaData['schemaName'], $tables->toArray());
         }
 
-        return $schemaName === null ? ReadonlyCollection::new($results, TypeHintFactory::tryParse(Schema::class)) : $results[0];
+        return RewindableEnumerable::create($results, TypeHintFactory::tryParseTypeName(Schema::class));
+
+        //return $schemaName === null ? RewindableEnumerable::create($results, TypeHintFactory::tryParseTypeName(Schema::class)) : $results[0];
     }
 
     /**
@@ -89,13 +89,13 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * @param string $schemaName 
      * @param null|string $tableName 
      * 
-     * @return IReadonlyCollection|Table 
+     * @return IRewindableEnumerable
      * 
      * @throws Exception 
      * @throws PDOException 
      * @throws InvalidArgumentException 
      */
-    protected function implReadTables(string $schemaName, ?string $tableName = null) {
+    protected function implReadTables(string $schemaName, ?string $tableName = null): IRewindableEnumerable {
         $query = "
             SELECT 
                 TABLE_NAME AS tableName 
@@ -114,7 +114,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
 
         if (($queryResults = $this->connection->query($query, $parameters)) === false) {
             if ($tableName === null) {
-                return ReadonlyCollection::new([], TypeHintFactory::tryParse(Table::class));
+                return RewindableEnumerable::create([], TypeHintFactory::tryParseTypeName(Table::class));
             }
             throw new DatabaseException("Error reading tables for schema '{$schemaName}'");
         } else if ($queryResults->rowCount() === 0) {
@@ -134,8 +134,10 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
 
             $results[] = new Table($schemaName, $tableData['tableName'], $columnsArray, $indexesArray);
         }
+
+        return RewindableEnumerable::create($results, TypeHintFactory::tryParseTypeName(Table::class));
         
-        return $tableName === null ? ReadonlyCollection::new($results, TypeHintFactory::tryParse(Table::class)) : $results[0];
+        //return $tableName === null ? RewindableEnumerable::create($results, TypeHintFactory::tryParseTypeName(Table::class)) : $results[0];
     }
 
     /**
@@ -145,13 +147,13 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * @param string $tableName 
      * @param null|string $columnName 
      * 
-     * @return IReadonlyCollection|Column 
+     * @return IRewindableEnumerable
      * 
      * @throws Exception 
      * @throws PDOException 
      * @throws InvalidArgumentException 
      */
-    protected function implReadColumns(string $schemaName, string $tableName, ?string $columnName = null) {
+    protected function implReadColumns(string $schemaName, string $tableName, ?string $columnName = null): IRewindableEnumerable {
         $query = "
             SELECT 
                 TABLE_SCHEMA as `schemaName`,
@@ -178,7 +180,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             throw new DatabaseException("Error reading columns for table '{$tableName}'");
         } else if ($queryResults->rowCount() === 0) {
             if ($columnName === null) {
-                return ReadonlyCollection::new([], TypeHintFactory::tryParse(Column::class));
+                return RewindableEnumerable::create([], TypeHintFactory::tryParseTypeName(Column::class));
             }
 
             throw new DatabaseException("Column '{$columnName}' does not exist");
@@ -209,7 +211,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             $results[] = new Column(...array_values($columnData));
         }
 
-        return $columnName === null ? ReadonlyCollection::new($results, TypeHintFactory::tryParse(Column::class)) : $results[0];
+        return RewindableEnumerable::create($results, TypeHintFactory::tryParseTypeName(Column::class));
     }
 
     /**
@@ -219,13 +221,13 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
      * @param string $tableName 
      * @param null|string $indexName 
      * 
-     * @return IReadonlyCollection|Index 
+     * @return IRewindableEnumerable
      * 
      * @throws Exception 
      * @throws PDOException 
      * @throws InvalidArgumentException 
      */
-    protected function implReadIndexes(string $schemaName, string $tableName, ?string $indexName = null) {
+    protected function implReadIndexes(string $schemaName, string $tableName, ?string $indexName = null): IRewindableEnumerable {
         $selectPrimaryKeyQuery = "
             SELECT 
                 COLUMN_NAME as `primaryKeyName`
@@ -273,7 +275,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             throw new DatabaseException("Error reading indexes for table '{$tableName}'");
         } else if ($queryResults->rowCount() === 0) {
             if ($indexName === null) {
-                return ReadonlyCollection::new([], TypeHintFactory::tryParse(Index::class));
+                return RewindableEnumerable::create([], TypeHintFactory::tryParseTypeName(Index::class));
             }
 
             throw new DatabaseException("Index '{$indexName}' does not exist");
@@ -311,6 +313,7 @@ class MysqlStructureReader extends CoreObject implements ISchemaReader {
             $results[] = new Index($index['schemaName'], $index['tableName'], $index['name'], $index['type'], $index['columns']);
         }
 
-        return $indexName === null ? ReadonlyCollection::new($results, TypeHintFactory::tryParse(Index::class)) : $results[0];
+        return RewindableEnumerable::create($results, TypeHintFactory::tryParseTypeName(Index::class));
+        //return $indexName === null ? RewindableEnumerable::create($results, TypeHintFactory::tryParseTypeName(Index::class)) : $results[0];
     }
 }

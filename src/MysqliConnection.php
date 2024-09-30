@@ -15,7 +15,7 @@ use mysqli;
 use Generator;
 use InvalidArgumentException;
 
-class MysqliConnection extends DatabaseConnection implements IMysqlConnection {
+class MysqliConnection extends MysqlConnection implements IMysqlConnection {
     private mysqli $link;
 
     public function __construct(mysqli $link) {
@@ -29,15 +29,6 @@ class MysqliConnection extends DatabaseConnection implements IMysqlConnection {
      */
     public function lastInsertId(): ?string {
         return $this->link->insert_id;
-    }
-
-    /**
-     * Get the name of the schema being used
-     * 
-     * @return string 
-     */
-    public function getUsingSchema(): string {
-        return $this->link->query('SELECT DATABASE() as usingSchema')->fetch_row()[0];
     }
 
     /**
